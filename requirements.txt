@@ -1,3 +1,8 @@
+matplotlib
+Pillow
+opencv-python
+pandas
+scikit-image
 torch>=1.4.0
 torchvision>=0.5.0
 scikit-learn==0.23.2
