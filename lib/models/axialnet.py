@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .utils import *
-import pdb
 import matplotlib.pyplot as plt
  
 import random
@@ -119,13 +118,11 @@ class AxialAttention_dynamic(nn.Module):
 
         # Priority on encoding
 
-        ## Initial values 
-
-        self.f_qr = nn.Parameter(torch.tensor(0.1),  requires_grad=False) 
-        self.f_kr = nn.Parameter(torch.tensor(0.1),  requires_grad=False)
-        self.f_sve = nn.Parameter(torch.tensor(0.1),  requires_grad=False)
-        self.f_sv = nn.Parameter(torch.tensor(1.0),  requires_grad=False)
-
+        # Initial values
+        self.f_qr  = nn.Parameter(torch.tensor(0.1), requires_grad=False)
+        self.f_kr  = nn.Parameter(torch.tensor(0.1), requires_grad=False)
+        self.f_sve = nn.Parameter(torch.tensor(0.1), requires_grad=False)
+        self.f_sv  = nn.Parameter(torch.tensor(1.0), requires_grad=False)
 
         # Position embedding
         self.relative = nn.Parameter(torch.randn(self.group_planes * 2, kernel_size * 2 - 1), requires_grad=True)
@@ -149,15 +146,16 @@ class AxialAttention_dynamic(nn.Module):
 
         # Transformations
         qkv = self.bn_qkv(self.qkv_transform(x))
-        q, k, v = torch.split(qkv.reshape(N * W, self.groups, self.group_planes * 2, H), [self.group_planes // 2, self.group_planes // 2, self.group_planes], dim=2)
+        q, k, v = torch.split(qkv.reshape(N * W, self.groups, self.group_planes * 2, H),
+                              [self.group_planes // 2, self.group_planes // 2, self.group_planes], dim=2)
 
         # Calculate position embedding
         all_embeddings = torch.index_select(self.relative, 1, self.flatten_index).view(self.group_planes * 2, self.kernel_size, self.kernel_size)
-        q_embedding, k_embedding, v_embedding = torch.split(all_embeddings, [self.group_planes // 2, self.group_planes // 2, self.group_planes], dim=0)
+        q_embedding, k_embedding, v_embedding = torch.split(all_embeddings,
+                                                            [self.group_planes // 2, self.group_planes // 2, self.group_planes], dim=0)
         qr = torch.einsum('bgci,cij->bgij', q, q_embedding)
         kr = torch.einsum('bgci,cij->bgij', k, k_embedding).transpose(2, 3)
         qk = torch.einsum('bgci, bgcj->bgij', q, k)
-
 
         # multiply by factors
         qr = torch.mul(qr, self.f_qr)
@@ -187,6 +185,7 @@ class AxialAttention_dynamic(nn.Module):
             output = self.pooling(output)
 
         return output
+
     def reset_parameters(self):
         self.qkv_transform.weight.data.normal_(0, math.sqrt(1. / self.in_planes))
         #nn.init.uniform_(self.relative, -0.1, 0.1)
@@ -431,12 +430,12 @@ class ResAxialAttentionUNet(nn.Module):
                                        dilate=replace_stride_with_dilation[2])
         
         # Decoder
-        self.decoder1 = nn.Conv2d(int(1024 *2*s)      ,        int(1024*2*s), kernel_size=3, stride=2, padding=1)
-        self.decoder2 = nn.Conv2d(int(1024  *2*s)     , int(1024*s), kernel_size=3, stride=1, padding=1)
-        self.decoder3 = nn.Conv2d(int(1024*s),  int(512*s), kernel_size=3, stride=1, padding=1)
-        self.decoder4 = nn.Conv2d(int(512*s) ,  int(256*s), kernel_size=3, stride=1, padding=1)
-        self.decoder5 = nn.Conv2d(int(256*s) , int(128*s) , kernel_size=3, stride=1, padding=1)
-        self.adjust   = nn.Conv2d(int(128*s) , num_classes, kernel_size=1, stride=1, padding=0)
+        self.decoder1 = nn.Conv2d(int(1024 * 2 * s), int(1024 * 2 * s), kernel_size=3, stride=2, padding=1)
+        self.decoder2 = nn.Conv2d(int(1024 * 2 * s),     int(1024 * s), kernel_size=3, stride=1, padding=1)
+        self.decoder3 = nn.Conv2d(int(1024 * s),          int(512 * s), kernel_size=3, stride=1, padding=1)
+        self.decoder4 = nn.Conv2d(int(512 * s),           int(256 * s), kernel_size=3, stride=1, padding=1)
+        self.decoder5 = nn.Conv2d(int(256 * s),          int(128 * s) , kernel_size=3, stride=1, padding=1)
+        self.adjust   = nn.Conv2d(int(128 * s) ,           num_classes, kernel_size=1, stride=1, padding=0)
         self.soft     = nn.Softmax(dim=1)
 
 
@@ -485,9 +484,7 @@ class ResAxialAttentionUNet(nn.Module):
         x1 = self.layer1(x)
 
         x2 = self.layer2(x1)
-        # print(x2.shape)
         x3 = self.layer3(x2)
-        # print(x3.shape)
         x4 = self.layer4(x3)
 
         x = F.relu(F.interpolate(self.decoder1(x4), scale_factor=(2,2), mode ='bilinear'))
@@ -678,7 +675,7 @@ class medt_net(nn.Module):
         return self._forward_impl(x)
 
 def MedT(pretrained=False, **kwargs):
-    model = medt_net(AxialBlock_dynamic,AxialBlock_wopos, [1, 2, 4, 1], s= 0.125,  **kwargs)
+    model = medt_net(AxialBlock_dynamic, AxialBlock_wopos, [1, 2, 4, 1], s=0.125, **kwargs)
     return model
 
 # EOF
