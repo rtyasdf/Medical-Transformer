@@ -166,21 +166,28 @@ for epoch in range(args.epochs):
     for param in model.parameters():
         param.requires_grad = True
 
-    if (epoch % args.save_freq) ==0:
+    if (epoch % args.save_freq) == 0:
 
-        for batch_idx, (X_batch, y_batch, *rest) in enumerate(valloader):
-            # print(batch_idx)
-            if isinstance(rest[0][0], str):
-                        image_filename = rest[0][0]
+        validate_loss.append(0)
+        for batch_idx, (X_batch, y_batch, rest) in enumerate(valloader):
+            if isinstance(rest[0], str):
+                        image_filename = rest[0]
             else:
                         image_filename = '%s.png' % str(batch_idx + 1).zfill(3)
 
-            X_batch = Variable(X_batch.to(device='cuda'))
-            y_batch = Variable(y_batch.to(device='cuda'))
-            # start = timeit.default_timer()
-            y_out = model(X_batch)
-            # stop = timeit.default_timer()
-            # print('Time: ', stop - start) 
+            X_batch = Variable(X_batch.to(device='cuda')) # cuda
+            y_batch = Variable(y_batch.to(device='cuda')) # cuda
+            with torch.no_grad():
+                y_out = model(X_batch)
+                if criterion is not LogNLLLoss:
+                    y_out = softmax(y_out)
+                    loss = criterion(y_out[:, 1, :, :], y_batch)
+                else:
+                    loss = criterion(y_out, y_batch)
+                validate_loss[-1] += loss.item()
+                if criterion is LogNLLLoss:
+                    y_out = softmax(y_out)
+
             tmp2 = y_batch.detach().cpu().numpy()
             tmp = y_out.detach().cpu().numpy()
             tmp[tmp>=0.5] = 1
