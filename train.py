@@ -190,35 +190,36 @@ for epoch in range(args.epochs):
 
             tmp2 = y_batch.detach().cpu().numpy()
             tmp = y_out.detach().cpu().numpy()
-            tmp[tmp>=0.5] = 1
-            tmp[tmp<0.5] = 0
-            tmp2[tmp2>0] = 1
-            tmp2[tmp2<=0] = 0
+
+            tmp[tmp >= 0.5] = 1
+            tmp[tmp < 0.5] = 0
+            tmp2[tmp2 > 0] = 1
+            tmp2[tmp2 <= 0] = 0
+
             tmp2 = tmp2.astype(int)
             tmp = tmp.astype(int)
 
-            # print(np.unique(tmp2))
             yHaT = tmp
             yval = tmp2
 
             epsilon = 1e-20
             
-            del X_batch, y_batch,tmp,tmp2, y_out
-
             
-            yHaT[yHaT==1] =255
-            yval[yval==1] =255
-            fulldir = direc+"/{}/".format(epoch)
-            # print(fulldir+image_filename)
+            del X_batch, y_batch, tmp, tmp2, y_out
+
+            yHaT[yHaT == 1] = 255
+            yval[yval == 1] = 255
+            fulldir = direc + "{}/".format(epoch)
             if not os.path.isdir(fulldir):
-                
                 os.makedirs(fulldir)
             
-            cv2.imwrite(fulldir+image_filename, yHaT[0,1,:,:])
-            # cv2.imwrite(fulldir+'/gt_{}.png'.format(count), yval[0,:,:])
-        fulldir = direc+"/{}/".format(epoch)
-        torch.save(model.state_dict(), fulldir+args.modelname+".pth")
-        torch.save(model.state_dict(), direc+"final_model.pth")
-            
+            cv2.imwrite(fulldir + image_filename, yHaT[0, 1, :, :])
 
-
+        fulldir = direc + "/{}/".format(epoch)
+        torch.save(model.state_dict(), fulldir + args.modelname + ".pth")
+        torch.save(model.state_dict(), direc + "final_model.pth")
+        validate_loss[-1] /= batch_idx
+        print("Validation loss = {:.4f}".format(validate_loss[-1]))
+        with open(direc + "validate_loss.txt", 'a') as vl:
+            vl.write(str(validate_loss[-1]))
+            vl.write("\n")
