@@ -710,21 +710,8 @@ class medt_net(nn.Module):
     def forward(self, x):
         return self._forward_impl(x)
 
-
-def axialunet(pretrained=False, **kwargs):
-    model = ResAxialAttentionUNet(AxialBlock, [1, 2, 4, 1], s= 0.125, **kwargs)
-    return model
-
-def gated(pretrained=False, **kwargs):
-    model = ResAxialAttentionUNet(AxialBlock_dynamic, [1, 2, 4, 1], s= 0.125, **kwargs)
-    return model
-
 def MedT(pretrained=False, **kwargs):
     model = medt_net(AxialBlock_dynamic,AxialBlock_wopos, [1, 2, 4, 1], s= 0.125,  **kwargs)
-    return model
-
-def logo(pretrained=False, **kwargs):
-    model = medt_net(AxialBlock,AxialBlock, [1, 2, 4, 1], s= 0.125, **kwargs)
     return model
 
 # EOF
